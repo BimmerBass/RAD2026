@@ -1,5 +1,7 @@
-﻿using System;
+﻿using RadImplementationProject.Hashing;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +11,7 @@ namespace RadImplementationProject
     public static class Stream
     {
         // Page four in project description
+        // NOTE: This function is unchanged relative to the requirements document (Implementeringsprojekt.pdf)
         public static IEnumerable<Tuple<ulong, int>> CreateStream(int n, int l)
         {
             // We generate a random uint64 number .
@@ -41,6 +44,27 @@ namespace RadImplementationProject
                 x = x + a;
                 yield return Tuple.Create(x & (((1UL << l) - 1UL) << 30), 1);
             }
+        }
+
+        public static (TimeSpan Elapsed, long SecondMoment) ComputeExactF2(List<Tuple<ulong, int>> stream, IHashFunction hash)
+        {
+            var sw = Stopwatch.StartNew();
+            var rng = new Random(Extensions.SEED);
+            var table = new HashTable(hash);
+            var keys = new HashSet<ulong>();
+
+            foreach (var entry in stream)
+            {
+                table.increment(entry.Item1, entry.Item2);
+                keys.Add(entry.Item1);
+            }
+
+            var secondMoment = keys
+                .Select(k => (long)table.get(k))
+                .Select(freq => freq * freq)
+                .Sum();
+            sw.Stop();
+            return (sw.Elapsed, secondMoment);
         }
     }
 }

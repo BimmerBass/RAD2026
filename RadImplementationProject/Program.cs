@@ -1,16 +1,23 @@
-﻿using CommandLine;
-using RadImplementationProject.Tasks;
+﻿using RadImplementationProject.Tasks;
 using RadImplementationProject.Hashing;
+using Spectre.Console.Cli;
 
 namespace RadImplementationProject
 {
     public static class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            Parser.Default.ParseArguments<HashFunctionsTest, QuadraticSums>(args)
-                .WithParsed<HashFunctionsTest>(HashFunctionsTest.Run)
-                .WithParsed<QuadraticSums>(QuadraticSums.Run);
+            var app = new CommandApp();
+            app.Configure(cfg =>
+            {
+                cfg.SetApplicationName("RAD Implementation Project");
+                cfg.AddCommand<HashFunctionsCommand>("hash-functions")
+                    .WithDescription("Compare speed of multiply-shift vs. multiply-mod-prime");
+                cfg.AddCommand<QuadraticSumsCommand>("quadratic-sums")
+                    .WithDescription("Second moment calculation speed of multiply-shift vs. multiply-mod-prime");
+            });
+            return app.Run(args);
         }
     }
 }

@@ -2,7 +2,7 @@
   "profiles": {
     "RadImplementationProject": {
       "commandName": "Project",
-      "commandLineArgs": "13"
+      "commandLineArgs": "hash-functions --stream-size 2097152"
     }
   }
 }
