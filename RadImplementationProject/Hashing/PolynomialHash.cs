@@ -10,7 +10,7 @@ namespace RadImplementationProject.Hashing
         private readonly BigInteger a2;
         private readonly BigInteger a3;
         
-        private readonly BigInteger prime;  // p = 2^89 - 1
+        private readonly BigInteger prime=BigInteger.Pow(2, 89) - 1;  // p = 2^89 - 1
         private int bitwidth;
 
         public PolynomialHash(int bitwidth, Random rng)
@@ -28,11 +28,21 @@ namespace RadImplementationProject.Hashing
             a1 = rng.BigIntegerMasked(prime);
             a2 = rng.BigIntegerMasked(prime);
             a3 = rng.BigIntegerMasked(prime);
+
+
+
         }
 
         public ulong Hash(ulong x)
         {
-            throw new NotImplementedException();
+            var y = a3;
+            for (int i = 2; i >= 0; i--)
+            {
+                y = y * x + GetCoefficient(i);
+                y = y & prime + y >> 89; // mod p
+            }
+            if (y >= prime) y -= prime;
+            return y;
         }
 
         public string Format()
@@ -47,9 +57,6 @@ namespace RadImplementationProject.Hashing
             bitwidth = newL;
         }
 
-        public ulong Range()
-        {
-            return (1UL << bitwidth);
-        }
+        
     }
 }
