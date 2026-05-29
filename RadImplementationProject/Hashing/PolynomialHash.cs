@@ -36,14 +36,15 @@ namespace RadImplementationProject.Hashing
 
         public ulong Hash(ulong x)
         {
+            var coeifficent = new BigInteger[] { a0, a1, a2 };
             var y = a3;
             for (int i = 2; i >= 0; i--)
             {
-                y = y * x + GetCoefficient(i);
+                y = y * x + coeifficent[i];
                 y = y & prime + y >> 89; // mod p
             }
             if (y >= prime) y -= prime;
-            return y;
+            return (ulong)(y >> (89 - bitwidth)); // reduce to [2^l]
         }
 
         public string Format()
