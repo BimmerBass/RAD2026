@@ -8,32 +8,25 @@ namespace RadImplementationProject.Hashing
         private readonly PolynomialHash g;
         private readonly int bitwidth;  // t, where m = 2^t
         private readonly ulong m;
-        private readonly BigInteger twoTo88;
 
-        public CountSketchHashFunctions(int bitwidth, Random rng)
+        public CountSketchHashFunctions(int t, Random rng)
         {
             if (bitwidth < 1 || bitwidth > 64)
                 throw new ArgumentOutOfRangeException(nameof(bitwidth));
 
-            this.bitwidth = bitwidth;
-            this.m = 1UL << bitwidth;  // m = 2^t
-            this.twoTo88 = BigInteger.One << 88;
-            this.g = new PolynomialHash(bitwidth, rng);
+            bitwidth = t;
+            m = 1UL << t;
+            g = new PolynomialHash(t, rng);
         }
 
-        public ulong H(ulong x)
+        public (ulong, int) Hashes(ulong x)
         {
-            // h(x) = g(x) mod m
-            throw new NotImplementedException();
+            var gx = g.Hash(x);
+            var hx = gx & (m - 1);
+            var bx = (int)(gx >> (g.primeExp - 1));
+            var sx = 1 - 2*bx;
+            return (hx, sx);
         }
-
-        public int S(ulong x)
-        {
-            // s(x) = 1 - 2*floor(g(x) / 2^88)
-            // Extracts the sign bit from g(x)
-            throw new NotImplementedException();
-        }
-
         public string Format()
         {
             return $"CountSketchHashFunctions(m=2^{bitwidth}, {g.Format()})";

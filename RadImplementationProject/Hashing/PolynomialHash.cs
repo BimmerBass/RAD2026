@@ -10,7 +10,8 @@ namespace RadImplementationProject.Hashing
         private readonly BigInteger a2;
         private readonly BigInteger a3;
         
-        private readonly BigInteger prime;  // p = 2^89 - 1
+        public readonly BigInteger prime;  // p = 2^89 - 1
+        public readonly int primeExp;
         private int bitwidth;
 
         public PolynomialHash(int bitwidth, Random rng)
@@ -19,9 +20,10 @@ namespace RadImplementationProject.Hashing
                 throw new ArgumentOutOfRangeException(nameof(bitwidth));
 
             this.bitwidth = bitwidth;
-            
+
             // p = 2^89 - 1
-            this.prime = (BigInteger.One << 89) - 1;
+            primeExp = 89;
+            prime = (BigInteger.One << primeExp) - 1;
             
             // Initialize random coefficients in [p] using masked random generation
             a0 = rng.BigIntegerMasked(prime);
