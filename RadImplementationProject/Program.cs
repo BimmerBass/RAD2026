@@ -19,6 +19,8 @@ namespace RadImplementationProject
                         .WithDescription("Compare speed of multiply-shift vs. multiply-mod-prime");
                     cfg.AddCommand<QuadraticSumsCommand>("quadratic-sums")
                         .WithDescription("Second moment calculation speed of multiply-shift vs. multiply-mod-prime");
+                    cfg.AddCommand<CountSketchCommand>("count-sketch")
+                        .WithDescription("Count-Sketch experiment with 100 estimates");
                 });
                 return app.Run(args);
             }

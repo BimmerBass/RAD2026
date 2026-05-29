@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace RadImplementationProject.Hashing
 {
-    public interface IHashFunction
+    public interface IHashFunction<T>
     {
-        ulong Hash(ulong x);
+        T Hash(T x);
         string Format();
         void SetBitwidth(int newL);
-        ulong Range();
+        T Range();
     }
+    public interface IHashFunction : IHashFunction<ulong> { }
 }

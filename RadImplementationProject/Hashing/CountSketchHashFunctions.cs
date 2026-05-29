@@ -11,18 +11,18 @@ namespace RadImplementationProject.Hashing
 
         public CountSketchHashFunctions(int t, Random rng)
         {
-            if (bitwidth < 1 || bitwidth > 64)
-                throw new ArgumentOutOfRangeException(nameof(bitwidth));
+            if (t < 1 || t > 64)
+                throw new ArgumentOutOfRangeException(nameof(t));
 
             bitwidth = t;
             m = 1UL << t;
-            g = new PolynomialHash(t, rng);
+            g = new PolynomialHash(rng);
         }
 
         public (ulong, int) Hashes(ulong x)
         {
             var gx = g.Hash(x);
-            var hx = gx & (m - 1);
+            var hx = (ulong)(gx & (m - 1));
             var bx = (int)(gx >> (g.primeExp - 1));
             var sx = 1 - 2*bx;
             return (hx, sx);

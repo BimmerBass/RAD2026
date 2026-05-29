@@ -2,7 +2,7 @@
   "profiles": {
     "RadImplementationProject": {
       "commandName": "Project",
-      "commandLineArgs": "quadratic-sums"//"hash-functions --stream-size 2097152"
+      "commandLineArgs": "count-sketch" //"quadratic-sums"//"hash-functions --stream-size 2097152"
     }
   }
 }
