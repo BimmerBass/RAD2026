@@ -1,6 +1,7 @@
 ﻿using RadImplementationProject.Tasks;
 using RadImplementationProject.Hashing;
 using Spectre.Console.Cli;
+using Spectre.Console;
 
 namespace RadImplementationProject
 {
@@ -8,16 +9,24 @@ namespace RadImplementationProject
     {
         static int Main(string[] args)
         {
-            var app = new CommandApp();
-            app.Configure(cfg =>
+            try
             {
-                cfg.SetApplicationName("RAD Implementation Project");
-                cfg.AddCommand<HashFunctionsCommand>("hash-functions")
-                    .WithDescription("Compare speed of multiply-shift vs. multiply-mod-prime");
-                cfg.AddCommand<QuadraticSumsCommand>("quadratic-sums")
-                    .WithDescription("Second moment calculation speed of multiply-shift vs. multiply-mod-prime");
-            });
-            return app.Run(args);
+                var app = new CommandApp();
+                app.Configure(cfg =>
+                {
+                    cfg.SetApplicationName("RAD Implementation Project");
+                    cfg.AddCommand<HashFunctionsCommand>("hash-functions")
+                        .WithDescription("Compare speed of multiply-shift vs. multiply-mod-prime");
+                    cfg.AddCommand<QuadraticSumsCommand>("quadratic-sums")
+                        .WithDescription("Second moment calculation speed of multiply-shift vs. multiply-mod-prime");
+                });
+                return app.Run(args);
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine("[bold red]Error:[/] ", ex);
+                return 1;
+            }
         }
     }
 }

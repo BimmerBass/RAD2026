@@ -19,9 +19,10 @@ namespace RadImplementationProject.Hashing
                 throw new ArgumentOutOfRangeException(nameof(bitwidth));
 
             this.bitwidth = bitwidth;
-            
+
             // p = 2^89 - 1
-            this.prime = (BigInteger.One << 89) - 1;
+            primeExp = 89;
+            prime = (BigInteger.One << primeExp) - 1;
             
             // Initialize random coefficients in [p] using masked random generation
             a0 = rng.BigIntegerMasked(prime);

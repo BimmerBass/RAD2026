@@ -13,19 +13,18 @@ namespace RadImplementationProject.Hashing
             if (bitwidth < 1 || bitwidth > 64)
                 throw new ArgumentOutOfRangeException(nameof(bitwidth));
 
-            this.hashFunctions = new CountSketchHashFunctions(bitwidth, rng);
-            this.counters = new long[1UL << bitwidth];
+            hashFunctions = new CountSketchHashFunctions(bitwidth, rng);
+            counters = new long[1UL << bitwidth];
         }
 
         public void Update(ulong x, long d)
         {
-            // Update operation: C[h(x)] += s(x) * d
-            throw new NotImplementedException();
+            var (hx, sx) = hashFunctions.Hashes(x);
+            counters[hx] += sx * d;
         }
 
-        public long Estimate()
+        public long EstimateF2()
         {
-            // sum of C[i]^2 for all i in [m]
             return counters.Sum(c => c * c);
         }
     }

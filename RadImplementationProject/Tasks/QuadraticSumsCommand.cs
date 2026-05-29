@@ -1,5 +1,8 @@
-﻿using Spectre.Console;
+﻿using RadImplementationProject.Hashing;
+using RadImplementationProject.Util;
+using Spectre.Console;
 using Spectre.Console.Cli;
+using Spectre.Console.Rendering;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,14 +18,11 @@ namespace RadImplementationProject.Tasks
         {
             [CommandOption("--stream-size")]
             [DefaultValue(1UL << 24)]
-            public ulong N { get; set; }
-            
-            [CommandOption("--key-universe")]
-            [DefaultValue(1UL << 16)]
-            public ulong U { get; set; }
+            public ulong N { get; set; } // limit is 24
 
             [CommandOption("--l-samples")]
-            [DefaultValue(new[] { 1, 2, 4, 8, 12, 16, 20 })]
+            [DefaultValue("1, 2, 4, 8, 12, 16, 20")]
+            [TypeConverter(typeof(ListTypeConverter))]
             public required IEnumerable<int> LSamples { get; set; }
         }
 
@@ -42,58 +42,69 @@ namespace RadImplementationProject.Tasks
 
         protected override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
         {
-            /*
-             
-             public static void Run(QuadraticSums args)
-        {
             var rng = new Random(Extensions.SEED);
+            var results = new List<(int, double, double, long)>();
+            var ms = new MultiplyShift(settings.LSamples.First(), rng);
+            var mmp = new MultiplyModPrime(settings.LSamples.First(), rng);
 
-            Console.WriteLine("Quadratic Sum Calculation Test");
-            Console.WriteLine($"n={args.NumStreamEntries}, unique_keys={args.NumUniqueKeyValues}");
-            Console.WriteLine($"l-values: [{string.Join(", ", args.LSamples)}]");
-
-            var results = new List<Row>();
-            var stream = Stream.CreateStream(args.NumStreamEntries, args.NumUniqueKeyValues).ToList();
-            var multiplyShift = new MultiplyShift(args.LSamples.First(), rng);
-            var multiplyModPrime = new MultiplyModPrime(args.LSamples.First(), rng);
-
-            Console.WriteLine($"Multiply-shift:     {multiplyShift.Format()}");
-            Console.WriteLine($"Multiply-mod-prime: {multiplyModPrime.Format()}");
-            Console.WriteLine();
-
-            int i = 0;
-            foreach (var l in args.LSamples)
-            {
-                i++;
-                multiplyShift.SetBitwidth(l);
-                multiplyModPrime.SetBitwidth(l);
-
-                Console.WriteLine($"[{i}] Testing l={l}");
-                var shiftResult = Stream.ComputeExactF2(stream, multiplyShift);
-                var modResult = Stream.ComputeExactF2(stream, multiplyModPrime);
-                Console.WriteLine($"    Multiply-shift: sum={shiftResult.SecondMoment} ms={shiftResult.Elapsed.TotalMilliseconds}");
-                Console.WriteLine($"    Multiply-mod-prime: sum={modResult.SecondMoment} ms={modResult.Elapsed.TotalMilliseconds}");
-                Console.WriteLine();
-
-                results.Add(new Row
+            AnsiConsole.Write(
+                new FigletText("2nd Moment Exact Calculation")
                 {
-                    L = l,
-                    MultiplyShiftMs = shiftResult.Elapsed.TotalMilliseconds,
-                    MultiplyModPrimeMs = modResult.Elapsed.TotalMilliseconds
+                    Justification = Justify.Center,
+                    Color = Color.Green
                 });
-            }
+            AnsiConsole.MarkupLine($"n={settings.N}, l-value samples: {string.Join(", ", settings.LSamples)}");
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine($"[red]Multiply-shift[/]:     {ms.Format()}");
+            AnsiConsole.MarkupLine($"[red]Multiply-mod-prime[/]: {mmp.Format()}");
+            AnsiConsole.WriteLine();
 
-            Console.WriteLine("CSV results:");
-            Console.WriteLine("n|l|multshift_ms|multmodprime_ms");
-            foreach (var row in results)
+            foreach (var lSample in settings.LSamples)
             {
-                Console.WriteLine($"{args.NumStreamEntries}|{row.L}|{row.MultiplyShiftMs}|{row.MultiplyModPrimeMs}");
+                AnsiConsole.MarkupLine($"[green]Timing hash functions for l={lSample}[/]");
+
+                // enumerate to ensure identical stream
+                var stream = Stream.CreateStream((int)settings.N, lSample).ToList();
+                ms.SetBitwidth(lSample);
+                mmp.SetBitwidth(lSample);
+
+                (TimeSpan Elapsed, long SecondMoment) msResult = (TimeSpan.FromMilliseconds(0), 0);
+                (TimeSpan Elapsed, long SecondMoment) mmpResult = (TimeSpan.FromMilliseconds(0), 0);
+                AnsiConsole.Status()
+                    .Spinner(Spinner.Known.Dots)
+                    .Start("Timing Multiply-Shift...", ctx =>
+                    {
+                        msResult = stream.ComputeExactF2(ms);
+
+                        ctx.Status("Timing Multiply-mod-Prime...");
+                        mmpResult = stream.ComputeExactF2(mmp);
+                    });
+
+                AnsiConsole.MarkupLine($"[red]Multiply-shift[/]:\tL2={msResult.SecondMoment}, time={msResult.Elapsed.TotalMilliseconds} ms");
+                AnsiConsole.MarkupLine($"[red]Multiply-mod-prime[/]:\tL2={mmpResult.SecondMoment}, time={mmpResult.Elapsed.TotalMilliseconds} ms");
+                AnsiConsole.WriteLine();
+
+                if (msResult.SecondMoment != mmpResult.SecondMoment)
+                    throw new InvalidOperationException("second moments did not match");
+
+                results.Add((lSample, msResult.Elapsed.TotalMilliseconds, mmpResult.Elapsed.TotalMilliseconds, mmpResult.SecondMoment));
             }
-            Console.WriteLine();
-        }
-             
-             */
-            throw new NotImplementedException();
+            var table = new Table()
+                    .RoundedBorder()
+                    .AddColumn("l-value")
+                    .AddColumn("ms")
+                    .AddColumn("mmp")
+                    .AddColumn("L2");
+            results.ForEach(r =>
+            {
+                table.AddRow(
+                    r.Item1.ToString(),
+                    r.Item2.ToString(),
+                    r.Item3.ToString(),
+                    r.Item4.ToString());
+            });
+            AnsiConsole.Write(table);
+            return 0;
         }
     }
 }
