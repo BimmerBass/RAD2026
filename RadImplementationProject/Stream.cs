@@ -46,7 +46,7 @@ namespace RadImplementationProject
             }
         }
 
-        public static (TimeSpan Elapsed, long SecondMoment) ComputeExactF2(List<Tuple<ulong, int>> stream, IHashFunction hash)
+        public static (TimeSpan Elapsed, long SecondMoment) ComputeExactF2(this List<Tuple<ulong, int>> stream, IHashFunction hash)
         {
             var sw = Stopwatch.StartNew();
             var rng = new Random(Extensions.SEED);
