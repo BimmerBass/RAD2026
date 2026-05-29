@@ -18,7 +18,7 @@ namespace RadImplementationProject.Tasks
         {
             [CommandOption("--stream-size")]
             [DefaultValue(1UL << 24)]
-            public ulong N { get; set; }
+            public ulong N { get; set; } // limit is 24
 
             [CommandOption("--l-samples")]
             [DefaultValue("1, 2, 4, 8, 12, 16, 20")]
