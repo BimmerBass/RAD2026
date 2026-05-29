@@ -1,10 +1,13 @@
+using CsvHelper;
 using RadImplementationProject.Hashing;
+using RadImplementationProject.Util;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 
 namespace RadImplementationProject.Tasks
@@ -18,8 +21,11 @@ namespace RadImplementationProject.Tasks
             public ulong N { get; set; }
 
             [CommandOption("--bit-width")]
-            [DefaultValue(12)]
+            [DefaultValue(23)]
             public int L { get; set; }
+
+            [CommandOption("--csv-path")]
+            public required string CsvPath { get; set;  }
         }
 
         protected override ValidationResult Validate(CommandContext context, Settings settings)
@@ -31,6 +37,12 @@ namespace RadImplementationProject.Tasks
             var numUniqueKeys = 1UL << settings.L;
             if (numUniqueKeys > settings.N)
                 return ValidationResult.Error("stream-size cannot be smaller than the key universe (2^L)");
+
+            var csvPath = Path.GetFullPath(settings.CsvPath);
+            var dir = Path.GetDirectoryName(csvPath);
+            if (csvPath == null || !Directory.Exists(dir))
+                return ValidationResult.Error("invalid path");
+
             return base.Validate(context, settings);
         }
 
@@ -80,7 +92,6 @@ namespace RadImplementationProject.Tasks
                         task.Increment(1);
                     }
                 });
-            estimates.Sort();
 
             var table = new Table()
                     .RoundedBorder()
@@ -90,58 +101,30 @@ namespace RadImplementationProject.Tasks
                 .Select((x, i) => (x, i)).ToList()
                 .ForEach(t => table.AddRow(t.i.ToString(), t.x.ToString()));
             AnsiConsole.Write(table);
+
+            var estimatesSorted = estimates.Order().ToList();
+            var mseSum = (double)estimates
+                .Select(e => e - exactF2)
+                .Select(r => r * r)
+                .Sum();
+            var mse = mseSum / (double)estimates.Count;
+
+            var rows = estimates.Select((e, i) => new CountSketchEstimate
+            {
+                Index = i + 1,
+                Estimate = e,
+                SortedEstimate = estimatesSorted[i],
+                ExactF2 = exactF2,
+                MeanSquareError = mse
+            });
+
+            using (var writer = new StreamWriter(settings.CsvPath, false))
+            using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+            {
+                csv.WriteRecords(rows);
+            }
+
             return 0;
         }
     }
-    /*var exactF2 = Stream.ComputeExactF2(stream, new MultiplyShift(20, rng)).SecondMoment;
-
-            var results = new List<Row>();
-
-            int sampleIndex = 0;
-            foreach (var t in args.TSamples)
-            {
-                sampleIndex++;
-                Console.WriteLine($"[{sampleIndex}] Testing t={t} (m={1UL << t})");
-                
-                var trialEstimates = new List<long>();
-
-                for (int trial = 0; trial < args.NumTrials; trial++)
-                {
-                    var trialRng = new Random(Extensions.SEED + trial);
-                    var sketch = new CountSketch(t, trialRng);
-
-                    foreach (var (x, d) in stream)
-                    {
-                        sketch.Update(x, d);
-                    }
-
-                    var estimate = sketch.Estimate();
-                    trialEstimates.Add(estimate);
-                }
-
-                trialEstimates.Sort();
-                var medianEstimate = trialEstimates[args.NumTrials / 2];
-                var errorPercent = exactF2 == 0 ? 0 : 100.0 * Math.Abs(medianEstimate - exactF2) / exactF2;
-
-                Console.WriteLine($"    Median estimate: {medianEstimate}, Exact F2: {exactF2}, Error: {errorPercent:F2}%");
-                Console.WriteLine();
-
-                results.Add(new Row
-                {
-                    T = t,
-                    Estimate = medianEstimate,
-                    Actual = exactF2,
-                    ErrorPercent = errorPercent
-                });
-            }
-
-            Console.WriteLine("CSV results:");
-            Console.WriteLine("n|t|estimate|actual|error_percent");
-            foreach (var row in results)
-            {
-                Console.WriteLine($"{args.NumStreamEntries}|{row.T}|{row.Estimate}|{row.Actual}|{row.ErrorPercent:F2}");
-            }
-            Console.WriteLine();
-        }
-    }*/
 }

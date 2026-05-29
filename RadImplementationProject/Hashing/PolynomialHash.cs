@@ -41,16 +41,6 @@ namespace RadImplementationProject.Hashing
                 y -= prime;
             }
             return y;
-
-            /*var coefficients = new[] { a2, a0, a1 };
-            var y = a3;
-            for (int i = 2; i >= 0; i--)
-            {
-                y = y * x + coefficients[i];
-                y = y & prime + y >> 89; // mod p
-            }
-            if (y >= prime) y -= prime;
-            return y;*/
         }
 
         public string Format()
