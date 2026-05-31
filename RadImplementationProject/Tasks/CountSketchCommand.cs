@@ -48,7 +48,7 @@ namespace RadImplementationProject.Tasks
 
         protected override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
         {
-            var rng = new Random();
+            var rng = new Random(Extensions.SEED);
             
             var stream = Stream
                 .CreateStream((int)settings.N, settings.L)
@@ -115,7 +115,8 @@ namespace RadImplementationProject.Tasks
                 Estimate = e,
                 SortedEstimate = estimatesSorted[i],
                 ExactF2 = exactF2,
-                MeanSquareError = mse
+                MeanSquareError = mse,
+                BitWidth = settings.L
             });
 
             using (var writer = new StreamWriter(settings.CsvPath, false))

@@ -28,5 +28,8 @@ namespace RadImplementationProject.Util
         [Name("mse")]
         [NameIndex(4)]
         public double MeanSquareError { get; set; }
+        [Name("bitwidth")]
+        [NameIndex(5)]
+        public int BitWidth { get; set; }
     }
 }
