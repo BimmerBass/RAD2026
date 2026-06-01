@@ -28,8 +28,17 @@ namespace RadImplementationProject.Util
         [Name("mse")]
         [NameIndex(4)]
         public double MeanSquareError { get; set; }
-        [Name("bitwidth")]
+
+        [Name("count_sketch_ms")]
         [NameIndex(5)]
-        public int BitWidth { get; set; }
+        public double CountSketchMilliseconds { get; set; }
+
+        [Name("exact_f2_ms")]
+        [NameIndex(6)]
+        public double ExactF2Milliseconds { get; set; }
+
+        [Name("counter_bitwidth")]
+        [NameIndex(7)]
+        public int CounterBitWidth { get; set; }
     }
 }

@@ -1,8 +1,7 @@
 {
   "profiles": {
     "RadImplementationProject": {
-      "commandName": "Project",
-      "commandLineArgs": "count-sketch --csv-path results.csv" //"quadratic-sums"//"hash-functions --stream-size 2097152"
+      "commandName": "Project"
     }
   }
 }
