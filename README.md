@@ -59,8 +59,6 @@ dotnet run --project RadImplementationProject -- count-sketch [--stream-size <n>
 | `--m-bit-widths <values>` | Nej | `23` | Komma-separaret liste af $m$-bit-antal. Antal counters i et CountSketch eksperiment vælges til $2^m$ |
 | `--csv-path <path>` | Ja | | Fil som resultaterne skal gemmes i. |
 
-Example matching the default single-`m` experiment:
-
 ### Del 2, opgave 7
 ```powershell
 dotnet run --project RadImplementationProject -- count-sketch --csv-path results_opg7.csv
