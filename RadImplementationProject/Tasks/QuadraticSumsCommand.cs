@@ -23,7 +23,7 @@ namespace RadImplementationProject.Tasks
             public ulong N { get; set; } // limit is 24
 
             [CommandOption("--l-samples")]
-            [DefaultValue("1, 2, 4, 8, 12, 16, 20")]
+            [DefaultValue("1, 2, 4, 8, 12, 16, 20,21,22")]
             [TypeConverter(typeof(ListTypeConverter))]
             public required IEnumerable<int> LSamples { get; set; }
 
