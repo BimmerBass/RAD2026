@@ -4,6 +4,8 @@ Programmet understøtter tre forskellige kommandoer, opdelt pba. opgaverne i [be
 ```powershell
 dotnet run --project RadImplementationProject -- <command> [options]
 ```
+**Bemærk:** ved at tilføje ```--property:Configuration=Release```  køres processen hurtigere.
+
 ## ```hash-functions``` (Del 1, opgave 1.c)
 
 Sammenligner køretiden af Multiply-shift med Multiply-mod-Prime
