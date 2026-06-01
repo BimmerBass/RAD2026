@@ -16,13 +16,13 @@ dotnet run --project RadImplementationProject -- hash-functions --stream-size <n
 
 | # | Krævet | Default-værdi | Beskrivelse |
 | --- | --- | --- | --- |
-| `--stream-size <n>` | Ja | | Antal elementer i strømmen. |
+| `--stream-size <n>` | Nej | `1UL << 24` | Antal elementer i strømmen. |
 | `--bit-width <l>` | No | `20` | Antal unikke nøgler i strømmen. $l \in [1;64)$, samt $2^l \leq n$. |
 
 For at reproducere rapporten, kør følgende kommando:
 
 ```powershell
-dotnet run --project RadImplementationProject -- hash-functions --stream-size 2097152
+dotnet run --project RadImplementationProject -- hash-functions
 ```
 
 ## ```quadratic-sums``` (Del 1, opgave 3)
