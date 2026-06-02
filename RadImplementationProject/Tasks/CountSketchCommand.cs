@@ -29,6 +29,10 @@ namespace RadImplementationProject.Tasks
             [TypeConverter(typeof(ListTypeConverter))]
             public required IEnumerable<int> MBitWidths { get; set; }
 
+            [CommandOption("--runs")]
+            [DefaultValue(100)]
+            public int Runs { get; set; }
+
             [CommandOption("--csv-path")]
             public required string CsvPath { get; set;  }
         }
@@ -102,7 +106,7 @@ namespace RadImplementationProject.Tasks
                         .Select(mBitWidth => (
                             MBitWidth: mBitWidth,
                             Progress: ctx.AddTask($"m=2^{mBitWidth}", maxValue: 100)))
-                        .Select(item => Task.Run(() => RunCountSketchExperiment(stream, exactResult, item.MBitWidth, item.Progress, progressLock), cancellationToken))
+                        .Select(item => Task.Run(() => RunCountSketchExperiment(stream, exactResult, item.MBitWidth, settings.Runs, item.Progress, progressLock), cancellationToken))
                         .ToList();
 
                     var results = await Task.WhenAll(tasks);
@@ -147,6 +151,7 @@ namespace RadImplementationProject.Tasks
             IReadOnlyList<Tuple<ulong, int>> stream,
             (TimeSpan Elapsed, long SecondMoment) exactResult,
             int mBitWidth,
+            int runs,
             ProgressTask progress,
             object progressLock)
         {
@@ -154,7 +159,7 @@ namespace RadImplementationProject.Tasks
             var estimates = new List<long>();
 
             var sw = Stopwatch.StartNew();
-            for (var index = 0; index < 100; index++)
+            for (var index = 0; index < runs; index++)
             {
                 var cs = new CountSketch(mBitWidth, rng);
                 foreach (var entry in stream)
@@ -192,6 +197,7 @@ namespace RadImplementationProject.Tasks
                 sw.Elapsed.TotalMilliseconds,
                 exactResult.Elapsed.TotalMilliseconds);
         }
+        
 
         private sealed record CountSketchExperimentResult(
             int MBitWidth,
