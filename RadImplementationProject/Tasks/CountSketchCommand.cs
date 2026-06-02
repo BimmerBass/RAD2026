@@ -29,10 +29,6 @@ namespace RadImplementationProject.Tasks
             [TypeConverter(typeof(ListTypeConverter))]
             public required IEnumerable<int> MBitWidths { get; set; }
 
-            [CommandOption("--runs")]
-            [DefaultValue(100)]
-            public int Runs { get; set; }
-
             [CommandOption("--csv-path")]
             public required string CsvPath { get; set;  }
         }
@@ -71,7 +67,7 @@ namespace RadImplementationProject.Tasks
                 .Order()
                 .ToList();
             var rows = new List<CountSketchEstimate>();
-            var summaries = new List<(int MBitWidth, double Mse, double CountSketchMilliseconds, double ExactF2Milliseconds)>();
+            var summaries = new List<(int MBitWidth, double Mse, double AverageCountSketchMilliseconds, double ExactF2Milliseconds)>();
 
             AnsiConsole.Write(
                 new FigletText("CountSketch Experiment")
@@ -106,7 +102,7 @@ namespace RadImplementationProject.Tasks
                         .Select(mBitWidth => (
                             MBitWidth: mBitWidth,
                             Progress: ctx.AddTask($"m=2^{mBitWidth}", maxValue: 100)))
-                        .Select(item => Task.Run(() => RunCountSketchExperiment(stream, exactResult, item.MBitWidth, settings.Runs, item.Progress, progressLock), cancellationToken))
+                        .Select(item => Task.Run(() => RunCountSketchExperiment(stream, exactResult, item.MBitWidth, item.Progress, progressLock), cancellationToken))
                         .ToList();
 
                     var results = await Task.WhenAll(tasks);
@@ -114,7 +110,7 @@ namespace RadImplementationProject.Tasks
                     summaries.AddRange(results.Select(result => (
                         result.MBitWidth,
                         result.Mse,
-                        result.CountSketchMilliseconds,
+                        result.AverageCountSketchMilliseconds,
                         result.ExactF2Milliseconds)));
                 })
                 .GetAwaiter()
@@ -125,7 +121,7 @@ namespace RadImplementationProject.Tasks
                     .AddColumn("m-bit-width")
                     .AddColumn("m")
                     .AddColumn("MSE")
-                    .AddColumn("CountSketch time (ms)")
+                    .AddColumn("CountSketch average time (ms)")
                     .AddColumn("Exact F2 time (ms)");
             summaries
                 .OrderBy(summary => summary.MBitWidth)
@@ -134,7 +130,7 @@ namespace RadImplementationProject.Tasks
                     summary.MBitWidth.ToString(),
                     $"2^{summary.MBitWidth}",
                     summary.Mse.ToString(CultureInfo.InvariantCulture),
-                    summary.CountSketchMilliseconds.ToString(CultureInfo.InvariantCulture),
+                    summary.AverageCountSketchMilliseconds.ToString(CultureInfo.InvariantCulture),
                     summary.ExactF2Milliseconds.ToString(CultureInfo.InvariantCulture)));
             AnsiConsole.Write(table);
 
@@ -151,28 +147,27 @@ namespace RadImplementationProject.Tasks
             IReadOnlyList<Tuple<ulong, int>> stream,
             (TimeSpan Elapsed, long SecondMoment) exactResult,
             int mBitWidth,
-            int runs,
             ProgressTask progress,
             object progressLock)
         {
             var rng = new Random(Extensions.SEED + mBitWidth);
-            var estimates = new List<long>();
+            var estimates = new List<(long SecondMoment,TimeSpan Elapsed)>();
 
-            var sw = Stopwatch.StartNew();
-            for (var index = 0; index < runs; index++)
+            for (var index = 0; index < 100; index++)
             {
+                var sw = Stopwatch.StartNew();
                 var cs = new CountSketch(mBitWidth, rng);
                 foreach (var entry in stream)
                     cs.Update(entry.Item1, entry.Item2);
-
-                estimates.Add(cs.EstimateF2());
+                sw.Stop();
+                estimates.Add((cs.EstimateF2(), sw.Elapsed));
                 lock (progressLock)
                     progress.Increment(1);
             }
-            sw.Stop();
 
-            var sortedEstimates = estimates.Order().ToList();
+            var sortedEstimates = estimates.OrderBy(e => e.SecondMoment).ToList();
             var mse = estimates
+                .Select(e => e.SecondMoment)
                 .Select(estimate => (double)estimate - exactResult.SecondMoment)
                 .Select(error => error * error)
                 .Average();
@@ -180,11 +175,11 @@ namespace RadImplementationProject.Tasks
                 .Select((estimate, index) => new CountSketchEstimate
                 {
                     Index = index + 1,
-                    Estimate = estimate,
-                    SortedEstimate = sortedEstimates[index],
+                    Estimate = estimate.SecondMoment,
+                    SortedEstimate = sortedEstimates[index].SecondMoment,
                     ExactF2 = exactResult.SecondMoment,
                     MeanSquareError = mse,
-                    CountSketchMilliseconds = sw.Elapsed.TotalMilliseconds,
+                    CountSketchMilliseconds = estimate.Elapsed.TotalMilliseconds,
                     ExactF2Milliseconds = exactResult.Elapsed.TotalMilliseconds,
                     CounterBitWidth = mBitWidth
                 })
@@ -194,7 +189,7 @@ namespace RadImplementationProject.Tasks
                 mBitWidth,
                 rows,
                 mse,
-                sw.Elapsed.TotalMilliseconds,
+                rows.Average(r => r.CountSketchMilliseconds),
                 exactResult.Elapsed.TotalMilliseconds);
         }
         
@@ -203,7 +198,7 @@ namespace RadImplementationProject.Tasks
             int MBitWidth,
             IReadOnlyList<CountSketchEstimate> Rows,
             double Mse,
-            double CountSketchMilliseconds,
+            double AverageCountSketchMilliseconds,
             double ExactF2Milliseconds);
     }
 }

@@ -67,8 +67,6 @@ dotnet run --project RadImplementationProject -- count-sketch --csv-path results
 ### Del 2, opgave 8
 ```powershell
 dotnet run --project RadImplementationProject -- count-sketch --m-bit-widths 8,12,23 --csv-path results_opg8.csv
-```powershell
-dotnet run --project RadImplementationProject -- count-sketch --m-bit-widths 8,12,23 --runs 1  --csv-path test.csv
 ```
 
 # Databehandling
