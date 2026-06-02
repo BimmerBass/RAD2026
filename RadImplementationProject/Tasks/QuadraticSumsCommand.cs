@@ -1,4 +1,5 @@
-﻿using RadImplementationProject.Hashing;
+﻿using CsvHelper;
+using RadImplementationProject.Hashing;
 using RadImplementationProject.Util;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -6,6 +7,7 @@ using Spectre.Console.Rendering;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,9 +23,13 @@ namespace RadImplementationProject.Tasks
             public ulong N { get; set; } // limit is 24
 
             [CommandOption("--l-samples")]
-            [DefaultValue("1, 2, 4, 8, 12, 16, 20")]
+            [DefaultValue("1, 2, 4, 8, 12, 16, 20,21,22")]
             [TypeConverter(typeof(ListTypeConverter))]
             public required IEnumerable<int> LSamples { get; set; }
+
+            [CommandOption("--csv-path")]
+            [DefaultValue("quadratic-sums-result.csv")]
+            public required string CsvPath {  get; set; }
         }
 
         protected override ValidationResult Validate(CommandContext context, Settings settings)
@@ -37,13 +43,18 @@ namespace RadImplementationProject.Tasks
             if (firstBad != 0)
                 return ValidationResult.Error($"l={firstBad} cannot have 2^l > n = {settings.N}");
 
+            var csvPath = Path.GetFullPath(settings.CsvPath);
+            var dir = Path.GetDirectoryName(csvPath);
+            if (csvPath == null || !Directory.Exists(dir))
+                return ValidationResult.Error("invalid path");
+
             return base.Validate(context, settings);
         }
 
         protected override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
         {
             var rng = new Random(Extensions.SEED);
-            var results = new List<(int, double, double, long)>();
+            var results = new List<QuadraticSumRow>();
             var ms = new MultiplyShift(settings.LSamples.First(), rng);
             var mmp = new MultiplyModPrime(settings.LSamples.First(), rng);
 
@@ -87,7 +98,13 @@ namespace RadImplementationProject.Tasks
                 if (msResult.SecondMoment != mmpResult.SecondMoment)
                     throw new InvalidOperationException("second moments did not match");
 
-                results.Add((lSample, msResult.Elapsed.TotalMilliseconds, mmpResult.Elapsed.TotalMilliseconds, mmpResult.SecondMoment));
+                results.Add(new QuadraticSumRow
+                {
+                    LValue = lSample,
+                    MultiplyShiftMs = msResult.Elapsed.TotalMilliseconds,
+                    MultiplyModPrimeMs = mmpResult.Elapsed.TotalMilliseconds,
+                    SecondMoment = mmpResult.SecondMoment
+                });
             }
             var table = new Table()
                     .RoundedBorder()
@@ -98,12 +115,18 @@ namespace RadImplementationProject.Tasks
             results.ForEach(r =>
             {
                 table.AddRow(
-                    r.Item1.ToString(),
-                    r.Item2.ToString(),
-                    r.Item3.ToString(),
-                    r.Item4.ToString());
+                    r.LValue.ToString(),
+                    r.MultiplyShiftMs.ToString(),
+                    r.MultiplyModPrimeMs.ToString(),
+                    r.SecondMoment.ToString());
             });
             AnsiConsole.Write(table);
+
+            using (var writer = new StreamWriter(settings.CsvPath, false))
+            using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+            {
+                csv.WriteRecords(results.OrderBy(row => row.LValue));
+            }
             return 0;
         }
     }

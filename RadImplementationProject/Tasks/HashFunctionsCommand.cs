@@ -15,7 +15,8 @@ namespace RadImplementationProject.Tasks
     {
         public class Settings : CommandSettings
         {
-            [CommandOption("--stream-size", isRequired: true)]
+            [CommandOption("--stream-size")]
+            [DefaultValue(1UL << 24)]
             public ulong N { get; set; }
             [CommandOption("--bit-width")]
             [DefaultValue(20)]
